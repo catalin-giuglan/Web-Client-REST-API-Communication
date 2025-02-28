@@ -1,93 +1,36 @@
-Tema 4 PCOM
+# Tema 4 PCOM
 
-Giuglan Catalin-Ionut
-325CB
+**Author:** Giuglan Catalin-Ionut  
+**Group:** 325CB
 
-Pentru rezolvarea temei am pornit de la scheletul laboratorului 9 
-(https://gitlab.cs.pub.ro/pcom/pcom-laboratoare-public/-/tree/master/lab9), din care
-am preluat fisierele buffer.c, buffer.h, helpers.c, helpers.h, requests.c si
-requests.h. De asemenea, am preluat si fisierele parson.c si parson.h de pe unul din
-link-urile din enuntul temei (https://github.com/kgabis/parson).
+## Introduction
+For solving this assignment, I started with the skeleton provided in Lab 9 ([Lab 9 Skeleton](https://gitlab.cs.pub.ro/pcom/pcom-laboratoare-public/-/tree/master/lab9)), from which I used the files `buffer.c`, `buffer.h`, `helpers.c`, `helpers.h`, `requests.c`, and `requests.h`. Additionally, I used the files `parson.c` and `parson.h` from one of the links mentioned in the assignment ([Parson Library](https://github.com/kgabis/parson)).
 
-Am folosit fisierele parson.c si parson.h pentru a crea obiecte JSON atunci
-cand trimit date la server, si pentru a extrage informatii din raspunsurile
-primite de la server.
+## Usage of Parson Library
+I used the `parson.c` and `parson.h` files to create JSON objects when sending data to the server and to extract information from the responses received from the server.
 
-In fisierul requests.c am implementat functiile deja existente in scheletul de
-laborator, si am adaugat in plus functia char *compute_delete_request, pentru
-a putea realiza comenzile de delete.
+## Functions in `requests.c`
+I implemented the functions already present in the lab skeleton and added the `char *compute_delete_request` function to enable DELETE commands.
 
-In fisierul client.c sunt implementate toate functiile pe care le folosesc pentru
-a realiza comenzile din enuntul temei. Le voi descrie pe fiecare in parte:
+## Functions in `client.c`
+All functions used for the assignment commands are implemented here. Each function is described below:
 
--> is_logged_in() - verifica daca utilizatorul este logat sau nu. Daca sirul
-"cookie" este gol, inseamna ca utilizatorul nu este logat si returneaza 0.
-Altfel, returneaza 1.
+- **is_logged_in()**: Checks if the user is logged in. Returns 0 if the "cookie" string is empty (user not logged in), otherwise returns 1.
+- **has_access_to_library()**: Checks if the user has access to the library in a similar manner to `is_logged_in()`. Returns 0 if the "token" string is empty, otherwise returns 1.
+- **get_response_code(char *response)**: Extracts the HTTP response code from a given string. Searches for the substring "HTTP/1.1" and returns the response code as an integer, or -1 if the substring is not found.
+- **get_cookie(char *response)**: Searches for a cookie in the response and saves it in the global "cookie" variable if found.
+- **remove_underscores(char *string)**: Removes all underscore ("_") characters from a given string.
+- **get_token(char *response)**: Similar to `get_cookie`, extracts the token from the response and saves it in the global "token" variable.
 
--> has_access_to_library() - verifica daca utilizatorul are acces la biblioteca,
-intr-o maniera asemanatoare cu is_logged_in(). Verifica daca sirul "token" este
-gol, ceea ce inseamna ca utilizatorul nu are acces la biblioteca, si returneaza
-0 sau 1 dupa caz.
+## Command Handling Functions
+- **handle_register(int sockfd, char *route, char *content_type)**: Handles the "register" command. The user enters a username and password, which are sent via a POST request to the server. Depending on the response, an appropriate message is displayed.
+- **handle_login(int sockfd, char *route, char *content_type)**: Handles the "login" command. Similar to `handle_register`, the user enters a username and password, which are sent via a POST request to the server. The user is logged in or not based on the response, and the received cookie is saved if logged in.
+- **handle_enter_library(int sockfd, char *route)**: Handles the "enter_library" command. Checks if the user is logged in and sends a GET request to the server to gain access to the library if logged in. The received token is saved, and an appropriate message is displayed.
+- **handle_get_books(int sockfd, char *route)**: Requests the list of books from the library by sending a GET request to the server. If access is granted, the list of books is displayed, otherwise, an error message is shown.
+- **handle_get_book(int sockfd, char *route, char *id)**: Similar to `handle_get_books`, but requests information about a specific book using the provided ID.
+- **handle_add_book(int sockfd, char *route, char *content_type)**: The user enters book information, which is sent via a POST request to the server. Depending on the response, a corresponding message is displayed indicating whether the book was added or not.
+- **handle_delete_book(int sockfd, char *route, char *id)**: Handles the deletion of a specific book from the library using the provided ID. A DELETE request is sent to the server, and the response indicates whether the book was deleted or not.
+- **handle_logout(int sockfd, char *route)**: Sends a GET request to the server to log out the user. If successful, the cookie and token are reset for the next session, and the user is logged out with a corresponding message displayed.
 
--> get_response_code(char *response) - aceasta functie extrage codul de raspuns
-HTTP dintr-un sir de caractere primit ca parametru. Functia cauta subsirul
-"HTTP/1.1" in sirul primit, si returneaza codul de raspuns sub format int. In cazul
-in care nu se gaseste subsirul asteptat, functia returneaza -1.
-
--> get_cookie(char *response) - functia cauta un cookie in raspunsul primit si,
-daca gaseste unul il salveaza in variabila globala "cookie".
-
--> remove_underscores(char *string) - functia "scoate" toate caracterele
-underscore ("_") dintr-un sir de caractere
-
--> get_token(char *response) - functie similara cu get_cookie, extrage
-token-ul din raspunsul primit si il salveaza in variabila globala "token".
-
--> handle_register(int sockfd, char *route, char *content_type) - functie care
-gestioneaza comanda "register". Utilizatorul introduce username si parola,
-care sunt trimise printr-un request de tip POST la server. In functie de
-raspunsul primit, se afiseaza un mesaj corespunzator.
-
--> handle_login(int sockfd, char *route, char *content_type) - functie care
-gestioneaza comanda "login". Utilizatorul introduce username si parola,
-si asemanator cu handle_register, se trimite un request de tip POST la server.
-In final utilizatorul este sau nu logat, in functie de raspunsul primit.
-Daca este logat, se salveaza cookie-ul primit.
-
--> handle_enter_library(int sockfd, char *route) - in aceasta functie ma ocup
-de comanda "enter_library". Verifica daca utilizatorul este logat, si daca
-da, trimite un request de tip GET la server pentru a primi acces la biblioteca.
-Daca accesul este permis, se salveaza token-ul primit si se afiseaza mesajul 
-corespunzator. Daca nu, se afiseaza un mesaj de eroare.
-
--> handle_get_books(int sockfd, char *route) - aceasta functie solicita
-serverului lista de carti din biblioteca prin trimiterea unui request de tip
-GET. Daca raspunsul indica faptul ca utilizatorul are acces la biblioteca,
-se afiseaza lista de carti. Altfel, se afiseaza un mesaj de eroare.
-
--> handle_get_book(int sockfd, char *route, char *id) - functioneaza asemanator
-cu "handle_get_books", doar ca in functia asta se trimite un request pentru
-a primi informatii despre o carte specifica, folosind id-ul primit.
-
--> handle_add_book(int sockfd, char *route, char *content_type) - in aceasta
-functie utilizatorul introduce informatiile despre o carte, care sunt trimise
-printr-un request de tip POST la server. In functie de raspunsul primit de la
-server, cartea a fost sau nu adaugata si se afiseaza un mesaj corespunzator.
-
--> handle_delete_book(int sockfd, char *route, char *id) - functie care gestioneaza
-stergera unei carti specifice din biblioteca, folosind id-ul primit ca parametru.
-Se trimite un request de tip DELETE la server si in functie de raspuns, cartea a fost
-sau nu stearsa.
-
--> handle_logout(int sockfd, char *route) - in aceasta functie se trimite o cerere de
-tip GET la server pentru a deconecta utilizatorul. Daca se reuseste deconectarea,
-se reseteaza cookie-ul si token-ul pentru urmatoarea sesiune si utilizatorul este
-deconectat, afisand un mesaj corespunzator.
-
--> main - in main sunt gestionate comenzile introduse de utilizator prin intermediul
-unui "if/else", si in functie de comanda introdusa se apeleaza functia corespunzatoare.
-Pentru comenzile care necesita interactiunea cu serverul, conexiunea este deschisa
-si inchisa inainte si dupa apelarea functiei corespunzatoare. Programul se termina
-cand utilizatorul introduce comanda "exit", caz in care se inchide conexiunea si
-se iese din "while" folosind "break". In cazul in care utilizatorul introduce o
-comanda care nu exista, se afiseaza un mesaj de eroare.
+## Main Function
+In the `main` function, user commands are handled using an "if/else" structure. Depending on the entered command, the corresponding function is called. For commands requiring server interaction, the connection is opened and closed before and after calling the respective function. The program terminates when the user enters the "exit" command, closing the connection and breaking out of the "while" loop. If an unknown command is entered, an error message is displayed.
